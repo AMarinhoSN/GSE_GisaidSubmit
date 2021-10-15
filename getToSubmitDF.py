@@ -1,6 +1,7 @@
 import pandas as pd
 import argparse
 from datetime import datetime
+
 # --- FUNCTIONS ---------------------------------------------------------------
 
 
@@ -30,7 +31,7 @@ def get_year_col(row):
 
 
 # virus name
-VN_MODEL = ' hCoV-19/Brazil/<UF>-FIOCRUZ-<cod_iam>/<ano>'
+VN_MODEL = 'hCoV-19/Brazil/<UF>-FIOCRUZ-<cod_iam>/<ano>'
 
 
 def get_viral_name(row):
@@ -74,7 +75,8 @@ args = parser.parse_args()
 # -----------------------------------------------------------------------------
 print(' Fiocruz Genomic Surveillance Engine :: Gisaid submition module')
 print(' v.0.0.1 : Prototype')
-print(' ----------------------------------------------------------------')
+print('                     APP: getSubmitDF')
+print(' ---------------------------------------------------------------------')
 
 # load original source
 print('@ loading THE TABELAO [', args.tabelao, ']...')
@@ -91,7 +93,7 @@ to_submit_df.loc[:, ('ano')] = to_submit_df.apply(get_year_col, axis=1)
 to_submit_df['viral_name'] = to_submit_df.apply(get_viral_name, axis=1)
 
 print('@ writing output...')
-if args.outName == None:
+if args.outName is None:
     now = datetime.now()
     dt_string = now.strftime("%d-%m-%Y")
     outName = dt_string+'_to_submit.csv'
