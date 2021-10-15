@@ -63,6 +63,8 @@ def get_location_col(row):
 
 # virus name
 
+#'covv_subm_sample_id' is missing., Column 'covv_location' is missing., Column 'covv_collection_date' is missing., Column 'covv_patient_age' is missing.
+
 
 def get_viral_name(row):
     '''
@@ -327,8 +329,8 @@ gisaid_df['fn'] = add_cte_cols(to_submit_df, fn)
 
 print('@ loading sample specific columns...')
 # get sample specific columns
-new_cols = ['collection_date', 'covv_gender',
-            'covv_patient age', 'covv_coverage']
+new_cols = ['covv_collection_date', 'covv_gender',
+            'covv_patient_age', 'covv_coverage']
 gisaid_df[new_cols] = to_submit_df.apply(get_gisaid_cols, axis=1)
 
 # covv_orig_lab cols
@@ -339,6 +341,7 @@ gisaid_df['covv_orig_lab_addr'] = gisaid_df.apply(get_ori_lab_add, axis=1)
 gisaid_df['covv_authors'] = gisaid_df.apply(get_ori_lab_authors, axis=1)
 
 gisaid_df['covv_virus_name'] = to_submit_df.apply(get_viral_name, axis=1)
+gisaid_df['covv_location'] = to_submit_df.apply(get_location_col, axi=1)
 
 now = datetime.now()
 dt_string = now.strftime("%d-%m-%Y")
@@ -347,8 +350,7 @@ print('@ writing output ('+outName+')')
 gisaid_df.to_csv(output_dir+'/'+outName)
 
 print('| --- Writing Multifasta --- |')
-print('@ generating constant values columns...')
-
+print('@ generating multifasta file...')
 
 #fn = 'test.fasta'
 # /storage/monitoracovid19/RESULTS/'
@@ -361,3 +363,4 @@ new_fanm = output_dir+dt_string+'_IAMsequence.fa'
 #to_submit_df = pd.read_csv('/storage/rgf_data/gisaid_box/to_submit.csv')
 
 get_multifasta_fl(new_fanm, to_submit_df, data_dir)
+print(':: DONE ::')
