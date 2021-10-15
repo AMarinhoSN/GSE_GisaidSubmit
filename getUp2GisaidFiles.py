@@ -17,9 +17,9 @@ parser.add_argument('-to_submit_csv', type=str, required=True,
 parser.add_argument('-cte_values', type=str, required=True,
                     help='path for val containing constante values')
 h1 = 'directory containing consensus sequence fasta file of samples'
-parser.add_argument_group('-data_dir', type=str, required=True, help=h1)
-parser.add_argument_group('-output_dir', default=os.getcwd(),
-                          help='directory for output (default = working dir)')
+parser.add_argument('-data_dir', type=str, required=True, help=h1)
+parser.add_argument('-output_dir', default=os.getcwd(),
+                    help='directory for output (default = working dir)')
 
 args = parser.parse_args()
 
