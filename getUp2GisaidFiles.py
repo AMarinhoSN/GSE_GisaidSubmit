@@ -308,7 +308,7 @@ gisaid_df['covv_subm_lab'] = add_cte_cols(to_submit_df, covv_subm_lab)
 gisaid_df['covv_subm_lab_addr'] = add_cte_cols(
     to_submit_df, covv_subm_lab_addr)
 
-gisaid_df['covv_sbm_sample_id'] = add_cte_cols(
+gisaid_df['covv_subm_sample_id'] = add_cte_cols(
     to_submit_df, covv_sbm_sample_id)
 
 gisaid_df['covv_authors'] = add_cte_cols(to_submit_df, covv_authors)
@@ -341,7 +341,7 @@ gisaid_df['covv_orig_lab_addr'] = gisaid_df.apply(get_ori_lab_add, axis=1)
 gisaid_df['covv_authors'] = gisaid_df.apply(get_ori_lab_authors, axis=1)
 
 gisaid_df['covv_virus_name'] = to_submit_df.apply(get_viral_name, axis=1)
-gisaid_df['covv_location'] = to_submit_df.apply(get_location_col, axi=1)
+gisaid_df['covv_location'] = to_submit_df.apply(get_location_col, axis=1)
 
 now = datetime.now()
 dt_string = now.strftime("%d-%m-%Y")
