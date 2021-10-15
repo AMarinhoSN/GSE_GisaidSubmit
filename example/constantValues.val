@@ -1,0 +1,30 @@
+submitter = flogin
+covv_type = betacoronavirus
+covv_add_location = unknown
+covv_passage = Original
+covv_host = Human
+covv_add_host_info = unknown
+covv_sampling_strategy = unknown
+covv_patient_status = unknown
+covv_specimen = unknown
+covv_outbreak = unknown
+covv_last_vaccinated = unknown
+covv_treatment = unknown
+covv_provider_sample_id = unknown
+covv_subm_lab = WallauLab on behalf of Fiocruz COVID-19 Genomic Surveillance Network
+covv_subm_lab_addr = Campus da UFPE - Av. Prof. Moraes Rego, s/n - Cidade Universitária, Recife – PE
+covv_sbm_sample_id = unknown
+covv_authors = Marcelo Henrique dos Santos Paiva, Cassia Docena, Matheus Filgueira Bezerra, Filipe Zimmer Dezordi, Leandro de Mattos, Antônio Marinho, Túlio de Lima Campos, Lais Ceschini Machado, Lilian Caroliny Amorim Silva, Gustavo Barbosa de Lima, Alexandre Freitas da Silva, Sinval Pinto Brandão Filho, Constância Flávia Junqueira Ayres, Gabriel Luz Wallau, Vladimir Costa Silva, Jacenir Reis dos Santos Mallet, Adelino Soares Lima Neto, Walterlene de Carvalho Goçalves, Joana Carolina Viana Lima, Marcela de Lacerda Valença Queiroz, Marcelo Adriano da Cunha e Silva Vieira, Hellen de Oliveira Amaral
+covv_comment =
+comment_type =
+covv_assembly_method = ViralFlow v.0.0.5
+# cov_seq_technology
+covv_seq_technology = Illumina Miseq
+# fn (FASTA filename)
+fn = myFastaFile.fa
+
+# ex: 'hCoV-19/Brazil/PE-FIOCRUZ-IAM3967/2021'
+vn_model =' hCoV-19/Brazil/<UF>-FIOCRUZ-<cod_iam>/<ano>'
+
+# constant location
+cte_loc = 'South America/Brazil/'
