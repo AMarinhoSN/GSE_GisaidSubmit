@@ -1,14 +1,40 @@
+import os
 import pandas as pd
 from datetime import datetime
+import argparse
 
 # load origin lab datagrame
+dsc = '''
+Get a sub files which must be submitted to GISAID.
+'''
 
-prog_lab_df = pd.read_csv('./example/orig_labs.csv')
-to_submit_df = pd.read_csv(
-    '/HDD/Projects/tables_IAM/14-10-2021_to_submit.csv')
+parser = argparse.ArgumentParser(description=dsc)
+parser.add_argument('-orig_lab_csv', type=str, required=True,
+                    help='path of csv containing origin lab information')
+parser.add_argument('-to_submit_csv', type=str, required=True,
+                    help='path for to_submit.csv (slice of THE TABELAO)) \
+                         containing ready to submit sequence codes')
+parser.add_argument('-cte_values', type=str, required=True,
+                    help='path for val containing constante values')
+h1 = 'directory containing consensus sequence fasta file of samples'
+parser.add_argument_group('-data_dir', type=str, required=True, help=h1)
+parser.add_argument_group('-output_dir', default=os.getcwd(),
+                          help='directory for output (default = working dir)')
 
-cte_vals_path = './example/constantValues.val'
+args = parser.parse_args()
 
+# -----------------------------------------------------------------------------
+print(' Fiocruz Genomic Surveillance Engine :: GISAID submition module')
+print(' v.0.0.1 : Prototype')
+print('                     APP: getUp2GisaidFiles.py')
+print(' ---------------------------------------------------------------------')
+
+orig_lab_df = pd.read_csv(args.orig_lab_csv)  # './example/orig_labs.csv')
+to_submit_df = pd.read_csv(args.to_submit_csv)
+#'/HDD/Projects/tables_IAM/14-10-2021_to_submit.csv')
+cte_vals_path = args.cte_values  # './example/constantValues.val'
+data_dir = args.data_dir
+output_dir = args.output_dir
 # --- FUNCTIONS ---------------------------------------------------------------
 
 
@@ -90,7 +116,7 @@ def get_ori_lab(row):
     '''
     get origin lab informations
     '''
-    olab = prog_lab_df.loc[prog_lab_df['UF'] == row['UF']]
+    olab = orig_lab_df.loc[orig_lab_df['UF'] == row['UF']]
     # if PE, then can be NUPIT or LACEN
     if len(olab) == 2:
         if row['cod_iam'].startswith('AMU'):
@@ -115,17 +141,98 @@ def get_ori_lab(row):
 def get_ori_lab_add(row):
     sel_lab = row['covv_orig_lab']
     #print(row.index, ' ',sel_lab)
-    orig_lab_addr = prog_lab_df.loc[prog_lab_df['orig_lab']
+    orig_lab_addr = orig_lab_df.loc[orig_lab_df['orig_lab']
                                     == sel_lab]['orig_lab_addr'].values[0]
     return orig_lab_addr
 
 
 def get_ori_lab_authors(row):
     sel_lab = row['covv_orig_lab']
-    return prog_lab_df.loc[prog_lab_df['orig_lab'] == sel_lab]['cov_authors'].values[0]
+    return orig_lab_df.loc[orig_lab_df['orig_lab'] == sel_lab]['cov_authors'].values[0]
+
+# --- MULTIFASTA --------------------------------------------------------------
+
+
+def get_multifasta_fl(new_fanm, to_submit_df, data_dir):
+    '''
+    '''
+    def get_consensus_seq(fasta_path, cod):
+        '''
+        get sequence line from a single sequence fasta file
+        '''
+        with open(fasta_path, 'r') as fasta_fl:
+            for line in fasta_fl:
+                if line.startswith('>'):
+                    # sanity check
+                    assert(cod in line)
+                else:
+                    return line
+
+    def is_desired_dir(dir_name, cods):
+        '''
+        check if a given string is on dir name
+        '''
+        for c_i, c in enumerate(cods):
+            if c in dir_name:
+                return True, c, c_i
+        return False, None, None
+
+    def get_cods():
+        '''
+        get iam codes to submit
+        '''
+        l = to_submit_df[['cod_iam']].values
+        return [item for subl in l for item in subl]
+
+    # get codes and indexes from df to submit
+    cods = get_cods()
+    cods_idx = to_submit_df.index
+    # create multifasta file
+    multifas_fl = open(new_fanm, 'w')
+
+    # iterate over subdirs on data dir
+    fa_found = []
+    for path, subdirs, files in os.walk(data_dir):
+        for name in files:
+            sub_dir = path.split('/')[-1]
+            # if subdir endswith '.results', then check if it belongs
+            # one of the desired codes, get consensus file and write
+            # the fasta sequence to multifasta file
+            if sub_dir.endswith('.results') is True:
+                #print(sub_dir)
+                desired, cod, cod_i = is_desired_dir(sub_dir, cods)
+                #print(cod)
+                if desired is True:
+                    #print('> found file for ', cod)
+                    if name.endswith('depth5.fa'):
+                        print('>found file for ', cod)
+                        fasta_path = os.path.join(path, name)
+                        #sanity
+                        assert(cod in name)
+                        # get seq name
+                        viral_name = to_submit_df.iloc[cod_i]['viral_name']
+                        # write sequence to new
+                        seq = get_consensus_seq(fasta_path, cod)
+                        # write to multifasta
+                        multifas_fl.write('> '+viral_name+'\n')
+                        multifas_fl.write(seq+'\n')
+                        fa_found.append(cod)
+            else:
+                continue
+    # check if any code is missing
+    try:
+        print(len(fa_found), ' total sequence files found')
+        assert(set(fa_found) == set(cods))
+    except(AssertionError):
+        print("WARNING: MISSING FILES FOR THE FOLLOWING CODES")
+        for i in cods:
+            if i not in fa_found:
+                print(i)
 
 
 # -----------------------------------------------------------------------------
+print('| --- csv sample metadata --- |')
+print('@ generating constant values columns...')
 cte_dct = load_cte_values(cte_vals_path)
 # get values
 submitter = cte_dct['submitter']
@@ -216,10 +323,9 @@ gisaid_df['covv_seq_technology'] = add_cte_cols(
     to_submit_df, covv_seq_technology)
 
 # fn (FASTA filename)
-fn = 'myFastaFile.fa'
 gisaid_df['fn'] = add_cte_cols(to_submit_df, fn)
 
-
+print('@ loading sample specific columns...')
 # get sample specific columns
 new_cols = ['collection_date', 'covv_gender',
             'covv_patient age', 'covv_coverage']
@@ -237,4 +343,21 @@ gisaid_df['covv_virus_name'] = to_submit_df.apply(get_viral_name, axis=1)
 now = datetime.now()
 dt_string = now.strftime("%d-%m-%Y")
 outName = dt_string+'_IAMsequences.csv'
-gisaid_df.to_csv(outName)
+print('@ writing output ('+outName+')')
+gisaid_df.to_csv(output_dir+'/'+outName)
+
+print('| --- Writing Multifasta --- |')
+print('@ generating constant values columns...')
+
+
+#fn = 'test.fasta'
+# /storage/monitoracovid19/RESULTS/'
+#data_dir = '/storage/rgf_data/gisaid_box/RESULTS_copy/'
+
+new_fanm = output_dir+dt_string+'_IAMsequence.fa'
+#to_submit_df = pd.read_csv('/storage/rgf_data/gisaid_box/to_submit.csv')
+#data_dir = '/storage/monitoracovid19/RESULTS/'
+#new_fanm = '/storage/rgf_data/gisaid_box/'+fn
+#to_submit_df = pd.read_csv('/storage/rgf_data/gisaid_box/to_submit.csv')
+
+get_multifasta_fl(new_fanm, to_submit_df, data_dir)
