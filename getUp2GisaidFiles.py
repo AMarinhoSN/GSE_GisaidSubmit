@@ -107,8 +107,8 @@ def get_gisaid_cols(row):
     # collection date
     # cov_gender
     # cov_patient_age
-    # covv_coverage
-    return row[['collection_date', 'Genero', 'idade', 'coverage']]
+    # covv_coverage # equivalent to average depth
+    return row[['collection_date', 'Genero', 'idade', 'avg_depth']]
 
 # get ori lab info
 # covv_orig_lab
