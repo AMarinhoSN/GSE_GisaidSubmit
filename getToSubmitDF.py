@@ -57,6 +57,8 @@ def get_viral_name(row):
         viral_name += char
     return viral_name
 
+def floatfy_avg_depth(row):
+    return float(row['avg depth'].replace(',','.'))
 
 # -----------------------------------------------------------------------------
 # --- INPUT PROCESSING --------------------------------------------------------
@@ -91,7 +93,7 @@ to_submit_df = tabelao.loc[tabelao['submissao gisaid']
 print("@ generating 'ano' and 'viral_name' columns")
 to_submit_df.loc[:, ('ano')] = to_submit_df.apply(get_year_col, axis=1)
 to_submit_df['viral_name'] = to_submit_df.apply(get_viral_name, axis=1)
-
+to_submit_df['avg depth'] = to_submit_df.apply(floatfy_avg_depth, axis=1)
 print('@ writing output...')
 if args.outName is None:
     now = datetime.now()
