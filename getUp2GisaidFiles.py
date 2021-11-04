@@ -119,6 +119,7 @@ def get_ori_lab(row):
     get origin lab informations
     '''
     olab = orig_lab_df.loc[orig_lab_df['UF'] == row['UF']]
+    #print(olab)
     # if PE, then can be NUPIT or LACEN
     if len(olab) == 2:
         if row['cod_iam'].startswith('AMU'):
@@ -128,9 +129,9 @@ def get_ori_lab(row):
 
     # if another state, then assume is LACEN from that state
     if len(olab) == 1:
-        sel_lab = 'LACEN/'+row['UF']
+        sel_lab = olab['orig_lab'].values[0]  # 'LACEN/'+row['UF']
         if row['UF'] == 'SP':
-            sel_lan = 'LACEN/PE'
+            sel_lab = 'LACEN/PE'
 
     # if no orig lab found, raise error
     if len(olab) == 0:
@@ -356,7 +357,7 @@ print('@ generating multifasta file...')
 # /storage/monitoracovid19/RESULTS/'
 #data_dir = '/storage/rgf_data/gisaid_box/RESULTS_copy/'
 
-new_fanm = output_dir+dt_string+'_IAMsequence.fa'
+new_fanm = output_dir+dt_string+'_IAMsequences.fa'
 #to_submit_df = pd.read_csv('/storage/rgf_data/gisaid_box/to_submit.csv')
 #data_dir = '/storage/monitoracovid19/RESULTS/'
 #new_fanm = '/storage/rgf_data/gisaid_box/'+fn
