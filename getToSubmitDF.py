@@ -6,18 +6,22 @@ from datetime import datetime
 
 
 def get_year_col(row):
-    '''
+    """
     get a column containing only the year
-    '''
+    """
     # NOTE: it is necessary for gisaid viral name columns
 
     try:
-        data = [int(x) for x in row['data-seq'].split('/')]
-        assert(len(data) == 3)
-    except(AssertionError):
-        print('missing value at ', row.name, ' | ', row['data-seq'], ' |')
+        data = [int(x) for x in row["data-seq"].split("/")]
+        assert len(data) == 3
+    except (AttributeError):
+        print("invalid type at ", row.name, " | ", row["data-seq"], " |")
+        return False
+    except (AssertionError):
+        print("missing date value at ", row.name, " | ", row["data-seq"], " |")
 
-    except(ValueError):
+    except (ValueError):
+        print("invalid date value at ", row.name, " | ", row["data-seq"], " |")
         return False
 
     for i in data:
@@ -27,26 +31,26 @@ def get_year_col(row):
         ###############
         if i >= 1900:
             return int(i)
-    raise Exception('No year data for '+row['cod_iam']+'('+row['data-seq']+')')
+    raise Exception("No year data for " + row["cod_iam"] + "(" + row["data-seq"] + ")")
 
 
 # virus name
-VN_MODEL = 'hCoV-19/Brazil/<UF>-FIOCRUZ-<cod_iam>/<ano>'
+VN_MODEL = "hCoV-19/Brazil/<UF>-FIOCRUZ-<cod_iam>/<ano>"
 
 
 def get_viral_name(row):
-    '''
+    """
     get viral name string using a model string
-    '''
+    """
     col_char = False
-    viral_name = ''
+    viral_name = ""
     # vn model is defined on the previous cell
     for char in VN_MODEL:
-        if char == '<':
-            col = ''
+        if char == "<":
+            col = ""
             col_char = True
             continue
-        if char == '>':
+        if char == ">":
             # get col
             viral_name += str(row[col])
             col_char = False
@@ -57,50 +61,76 @@ def get_viral_name(row):
         viral_name += char
     return viral_name
 
+
 def floatfy_avg_depth(row):
-    return float(row['avg depth'].replace(',','.'))
+    return float(row["avg depth"].replace(",", "."))
+
+
+def parse_onhold(row):
+    if row["ON_HOLD"] is not True:
+        return False
+    if row["ON_HOLD"] is True:
+        return True
+
 
 # -----------------------------------------------------------------------------
 # --- INPUT PROCESSING --------------------------------------------------------
-dsc = '''
+dsc = """
 Get a sub dataframe containing only ready to submit sequences from THE TABELAO.
-'''
+"""
 
 
 parser = argparse.ArgumentParser(description=dsc)
-parser.add_argument('tabelao', type=str, help='path of THE TABELAO file')
-parser.add_argument('--outName', default=None, type=str,
-                    help='path for output csv (default = <date>_to_submit.csv)')
+parser.add_argument("tabelao", type=str, help="path of THE TABELAO file")
+parser.add_argument(
+    "--outName",
+    default=None,
+    type=str,
+    help="path for output csv (default = <date>_to_submit.csv)",
+)
 
 args = parser.parse_args()
 
 # -----------------------------------------------------------------------------
-print(' Fiocruz Genomic Surveillance Engine :: Gisaid submition module')
-print(' v.0.0.1 : Prototype')
-print('                     APP: getSubmitDF')
-print(' ---------------------------------------------------------------------')
+print(" Fiocruz Genomic Surveillance Engine :: Gisaid submition module")
+print(" v.0.0.1 : Prototype")
+print("                     APP: getSubmitDF")
+print(" ---------------------------------------------------------------------")
 
 # load original source
-print('@ loading THE TABELAO [', args.tabelao, ']...')
+print("@ loading THE TABELAO [", args.tabelao, "]...")
+
 # TODO: add sanity check
 tabelao = pd.read_csv(args.tabelao)
+tabelao.loc[:, "ON_HOLD"] = tabelao.apply(parse_onhold, axis=1)
 
-print('@ filtering only ready for submitions...')
+print("@ filtering only ready for submitions...")
+
 # get sequence ids to submit
-to_submit_df = tabelao.loc[tabelao['submissao gisaid']
-                           == 'pronto para submissao']
+read2sub_tb = tabelao["submissao gisaid"] == "pronto para submissao"
+
+# remove on hold samples
+to_submit_df = tabelao.loc[(read2sub_tb) & (tabelao["ON_HOLD"] == False)]
+
+# store only on hold samples
+onhold_df = tabelao.loc[tabelao["ON_HOLD"] == True]
+print(f" WARNING: {len(onhold_df)} samples ready for submition, but on hold")
 
 print("@ generating 'ano' and 'viral_name' columns")
-to_submit_df.loc[:, ('ano')] = to_submit_df.apply(get_year_col, axis=1)
-to_submit_df['viral_name'] = to_submit_df.apply(get_viral_name, axis=1)
-to_submit_df['avg depth'] = to_submit_df.apply(floatfy_avg_depth, axis=1)
-print('@ writing output...')
+to_submit_df.loc[:, "ano"] = to_submit_df.apply(get_year_col, axis=1)
+to_submit_df.loc[:, "viral_name"] = to_submit_df.apply(get_viral_name, axis=1)
+to_submit_df.loc[:, "avg depth"] = to_submit_df.apply(floatfy_avg_depth, axis=1)
+
+print("@ writing output...")
 if args.outName is None:
     now = datetime.now()
     dt_string = now.strftime("%d-%m-%Y")
-    outName = dt_string+'_to_submit.csv'
+    outName = dt_string + "_to_submit.csv"
+    onHoldNm = dt_string + "_on_hold.csv"
 else:
     outName = args.outName
+    onHoldNm = args.outName.replace(".csv", "_on_hold.csv")
 
 to_submit_df.to_csv(outName)
-print(':: DONE ::')
+onhold_df.to_csv(onHoldNm)
+print(":: DONE ::")
