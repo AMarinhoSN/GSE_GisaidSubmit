@@ -4,30 +4,45 @@ from datetime import datetime
 import argparse
 
 # load origin lab datagrame
-dsc = '''
+dsc = """
 Get a sub files which must be submitted to GISAID.
-'''
+"""
 
 parser = argparse.ArgumentParser(description=dsc)
-parser.add_argument('-orig_lab_csv', type=str, required=True,
-                    help='path of csv containing origin lab information')
-parser.add_argument('-to_submit_csv', type=str, required=True,
-                    help='path for to_submit.csv (slice of THE TABELAO)) \
-                         containing ready to submit sequence codes')
-parser.add_argument('-cte_values', type=str, required=True,
-                    help='path for val containing constante values')
-h1 = 'directory containing consensus sequence fasta file of samples'
-parser.add_argument('-data_dir', type=str, required=True, help=h1)
-parser.add_argument('-output_dir', default=os.getcwd(),
-                    help='directory for output (default = working dir)')
+parser.add_argument(
+    "-orig_lab_csv",
+    type=str,
+    required=True,
+    help="path of csv containing origin lab information",
+)
+parser.add_argument(
+    "-to_submit_csv",
+    type=str,
+    required=True,
+    help="path for to_submit.csv (slice of THE TABELAO)) \
+                         containing ready to submit sequence codes",
+)
+parser.add_argument(
+    "-cte_values",
+    type=str,
+    required=True,
+    help="path for val containing constante values",
+)
+h1 = "directory containing consensus sequence fasta file of samples"
+parser.add_argument("-data_dir", type=str, required=True, help=h1)
+parser.add_argument(
+    "-output_dir",
+    default=os.getcwd(),
+    help="directory for output (default = working dir)",
+)
 
 args = parser.parse_args()
 
 # -----------------------------------------------------------------------------
-print(' Fiocruz Genomic Surveillance Engine :: GISAID submition module')
-print(' v.0.0.1 : Prototype')
-print('                     APP: getUp2GisaidFiles.py')
-print(' ---------------------------------------------------------------------')
+print(" Fiocruz Genomic Surveillance Engine :: GISAID submition module")
+print(" v.0.0.1 : Prototype")
+print("                     APP: getUp2GisaidFiles.py")
+print(" ---------------------------------------------------------------------")
 
 orig_lab_df = pd.read_csv(args.orig_lab_csv)  # './example/orig_labs.csv')
 to_submit_df = pd.read_csv(args.to_submit_csv)
@@ -40,26 +55,28 @@ output_dir = args.output_dir
 
 def load_cte_values(val_path):
     dct = {}
-    val_fl = open(val_path, 'r')
+    val_fl = open(val_path, "r")
     for line in val_fl:
-        if line.startswith('#'):
+        if line.startswith("#"):
             continue
         else:
-            ln_data = line.split('=')
+            ln_data = line.split("=")
             if len(ln_data) < 2:
                 continue
-            dct[ln_data[0].replace(' ', '')] = ln_data[1].replace('\n', '')
+            dct[ln_data[0].replace(" ", "")] = ln_data[1].replace("\n", "")
     return dct
+
 
 # location
 
 
 def get_location_col(row):
-    cte_loc = 'South America/Brazil/'
+    cte_loc = "South America/Brazil/"
     # location
-    state = row['estado']
-    city = row['municipio']
-    return cte_loc+state+'/'+city
+    state = row["estado"]
+    city = row["municipio"]
+    return cte_loc + state + "/" + city
+
 
 # virus name
 
@@ -67,19 +84,19 @@ def get_location_col(row):
 
 
 def get_viral_name(row):
-    '''
+    """
     get viral name string using a model string
-    '''
+    """
     col_char = False
-    viral_name = ''
-    vn_model = 'hCoV-19/Brazil/<UF>-FIOCRUZ-<cod_iam>/<ano>'
+    viral_name = ""
+    vn_model = "hCoV-19/Brazil/<UF>-FIOCRUZ-<cod_iam>/<ano>"
     # vn model is defined on the previous cell
     for char in vn_model:
-        if char == '<':
-            col = ''
+        if char == "<":
+            col = ""
             col_char = True
             continue
-        if char == '>':
+        if char == ">":
             # get col
             viral_name += str(row[col])
             col_char = False
@@ -90,13 +107,15 @@ def get_viral_name(row):
         viral_name += char
     return viral_name
 
+
 # constant values
 
 
 def add_cte_cols(df, value):
-    '''
+    """
     get a columns with constant values
-    '''
+    """
+
     def f(row):
         return value
 
@@ -108,125 +127,128 @@ def get_gisaid_cols(row):
     # cov_gender
     # cov_patient_age
     # covv_coverage # equivalent to average depth
-    return row[['collection_date', 'Genero', 'idade', 'avg depth']]
+    return row[["collection_date", "Genero", "idade", "avg depth"]]
+
 
 # get ori lab info
 # covv_orig_lab
 
 
 def get_ori_lab(row):
-    '''
+    """
     get origin lab informations
-    '''
-    olab = orig_lab_df.loc[orig_lab_df['UF'] == row['UF']]
-    #print(olab)
+    """
+    olab = orig_lab_df.loc[orig_lab_df["UF"] == row["UF"]]
+    # print(olab)
     # if PE, then can be NUPIT or LACEN
     if len(olab) == 2:
-        if row['cod_iam'].startswith('AMU'):
-            sel_lab = 'NUPIT/UFPE'
+        if row["cod_iam"].startswith("AMU"):
+            sel_lab = "NUPIT/UFPE"
         else:
-            sel_lab = 'LACEN/PE'
+            sel_lab = "LACEN/PE"
 
     # if another state, then assume is LACEN from that state
     if len(olab) == 1:
-        sel_lab = olab['orig_lab'].values[0]  # 'LACEN/'+row['UF']
-        if row['UF'] == 'SP':
-            sel_lab = 'LACEN/PE'
+        sel_lab = olab["orig_lab"].values[0]  # 'LACEN/'+row['UF']
+        if row["UF"] == "SP":
+            sel_lab = "LACEN/PE"
 
     # if no orig lab found, raise error
     if len(olab) == 0:
         print(row)
-        raise Exception('NO ORI LAB FOUND FOR ', row['UF'])
+        raise Exception("NO ORI LAB FOUND FOR ", row["UF"])
 
     return sel_lab
 
 
 def get_ori_lab_add(row):
-    sel_lab = row['covv_orig_lab']
-    #print(row.index, ' ',sel_lab)
-    orig_lab_addr = orig_lab_df.loc[orig_lab_df['orig_lab']
-                                    == sel_lab]['orig_lab_addr'].values[0]
+    sel_lab = row["covv_orig_lab"]
+    # print(row.index, ' ',sel_lab)
+    orig_lab_addr = orig_lab_df.loc[orig_lab_df["orig_lab"] == sel_lab][
+        "orig_lab_addr"
+    ].values[0]
     return orig_lab_addr
 
 
 def get_ori_lab_authors(row):
-    sel_lab = row['covv_orig_lab']
-    return orig_lab_df.loc[orig_lab_df['orig_lab'] == sel_lab]['cov_authors'].values[0]
+    sel_lab = row["covv_orig_lab"]
+    return orig_lab_df.loc[orig_lab_df["orig_lab"] == sel_lab]["cov_authors"].values[0]
+
 
 # --- MULTIFASTA --------------------------------------------------------------
 
 
 def get_multifasta_fl(new_fanm, to_submit_df, data_dir):
-    '''
-    '''
+    """ """
+
     def get_consensus_seq(fasta_path, cod):
-        '''
+        """
         get sequence line from a single sequence fasta file
-        '''
-        with open(fasta_path, 'r') as fasta_fl:
+        """
+        with open(fasta_path, "r") as fasta_fl:
             for line in fasta_fl:
-                if line.startswith('>'):
+                if line.startswith(">"):
                     # sanity check
-                    assert(cod in line)
+                    assert cod in line
                 else:
                     return line
 
     def is_desired_dir(dir_name, cods):
-        '''
+        """
         check if a given string is on dir name
-        '''
+        """
         for c_i, c in enumerate(cods):
             if c in dir_name:
                 return True, c, c_i
         return False, None, None
 
     def get_cods():
-        '''
+        """
         get iam codes to submit
-        '''
-        l = to_submit_df[['cod_iam']].values
+        """
+        l = to_submit_df[["cod_iam"]].values
         return [item for subl in l for item in subl]
 
     # get codes and indexes from df to submit
     cods = get_cods()
     cods_idx = to_submit_df.index
     # create multifasta file
-    multifas_fl = open(new_fanm, 'w')
+    multifas_fl = open(new_fanm, "w")
 
     # iterate over subdirs on data dir
     fa_found = []
     for path, subdirs, files in os.walk(data_dir):
         for name in files:
-            sub_dir = path.split('/')[-1]
+            sub_dir = path.split("/")[-1]
             # if subdir endswith '.results', then check if it belongs
             # one of the desired codes, get consensus file and write
             # the fasta sequence to multifasta file
-            if sub_dir.endswith('.results') is True:
-                #print(sub_dir)
+            if sub_dir.endswith(".results") is True:
+                # print(sub_dir)
                 desired, cod, cod_i = is_desired_dir(sub_dir, cods)
-                #print(cod)
+                # print(cod)
                 if desired is True:
-                    #print('> found file for ', cod)
-                    if name.endswith('depth5.fa'):
-                        print('>found file for ', cod)
+                    # print('> found file for ', cod)
+                    if name.endswith("depth5.fa"):
+                        print(">found file for ", cod)
                         fasta_path = os.path.join(path, name)
-                        #sanity
-                        assert(cod in name)
+                        # sanity
+                        assert cod in name
                         # get seq name
-                        viral_name = to_submit_df.iloc[cod_i]['viral_name']
+                        viral_name = to_submit_df.iloc[cod_i]["viral_name"]
                         # write sequence to new
                         seq = get_consensus_seq(fasta_path, cod)
                         # write to multifasta
-                        multifas_fl.write('> '+viral_name+'\n')
-                        multifas_fl.write(seq+'\n')
+                        multifas_fl.write("> " + viral_name + "\n")
+                        multifas_fl.write(seq + "\n")
                         fa_found.append(cod)
             else:
                 continue
     # check if any code is missing
     try:
-        print(len(fa_found), ' total sequence files found')
-        assert(set(fa_found) == set(cods))
-    except(AssertionError):
+        print(len(fa_found), " total sequence files found")
+        assert set(fa_found) == set(cods)
+    except (AssertionError):
         print("WARNING: MISSING FILES FOR THE FOLLOWING CODES")
         for i in cods:
             if i not in fa_found:
@@ -234,38 +256,38 @@ def get_multifasta_fl(new_fanm, to_submit_df, data_dir):
 
 
 # -----------------------------------------------------------------------------
-print('| --- csv sample metadata --- |')
-print('@ generating constant values columns...')
+print("| --- csv sample metadata --- |")
+print("@ generating constant values columns...")
 cte_dct = load_cte_values(cte_vals_path)
 # get values
-submitter = cte_dct['submitter']
-covv_type = cte_dct['covv_type']
-covv_add_location = cte_dct['covv_add_location']
-covv_passage = cte_dct['covv_passage']  # 'Original'
-covv_host = cte_dct['covv_host']  # 'Human'
-covv_add_host_info = cte_dct['covv_add_host_info']  # 'unknown'
-covv_sampling_strategy = cte_dct['covv_sampling_strategy']  # 'unknown'
-covv_patient_status = cte_dct['covv_patient_status']  # 'unknown'
-covv_specimen = cte_dct['covv_specimen']  # 'unknown'
-covv_outbreak = cte_dct['covv_outbreak']  # 'unknown'
-covv_last_vaccinated = cte_dct['covv_last_vaccinated']  # 'unknown'
-covv_treatment = cte_dct['covv_treatment']  # 'unknown'
-covv_provider_sample_id = cte_dct['covv_provider_sample_id']  # 'unknown'
+submitter = cte_dct["submitter"]
+covv_type = cte_dct["covv_type"]
+covv_add_location = cte_dct["covv_add_location"]
+covv_passage = cte_dct["covv_passage"]  # 'Original'
+covv_host = cte_dct["covv_host"]  # 'Human'
+covv_add_host_info = cte_dct["covv_add_host_info"]  # 'unknown'
+covv_sampling_strategy = cte_dct["covv_sampling_strategy"]  # 'unknown'
+covv_patient_status = cte_dct["covv_patient_status"]  # 'unknown'
+covv_specimen = cte_dct["covv_specimen"]  # 'unknown'
+covv_outbreak = cte_dct["covv_outbreak"]  # 'unknown'
+covv_last_vaccinated = cte_dct["covv_last_vaccinated"]  # 'unknown'
+covv_treatment = cte_dct["covv_treatment"]  # 'unknown'
+covv_provider_sample_id = cte_dct["covv_provider_sample_id"]  # 'unknown'
 # 'WallauLab on behalf of Fiocruz COVID-19 Genomic Surveillance Network'
-covv_subm_lab = cte_dct['covv_subm_lab']
+covv_subm_lab = cte_dct["covv_subm_lab"]
 # 'Campus da UFPE - Av. Prof. Moraes Rego, s/n - Cidade Universitária, Recife – PE'
-covv_subm_lab_addr = cte_dct['covv_subm_lab_addr']
-covv_sbm_sample_id = cte_dct['covv_sbm_sample_id']  # 'unknow'
-covv_authors = cte_dct['covv_authors']
-covv_comment = cte_dct['covv_comment']
-comment_type = cte_dct['comment_type']
+covv_subm_lab_addr = cte_dct["covv_subm_lab_addr"]
+covv_sbm_sample_id = cte_dct["covv_sbm_sample_id"]  # 'unknow'
+covv_authors = cte_dct["covv_authors"]
+covv_comment = cte_dct["covv_comment"]
+comment_type = cte_dct["comment_type"]
 
 # cov_assembly method (viralflow)
-covv_assembly_method = cte_dct['covv_assembly_method']  # 'ViralFlow v.0.0.5'
+covv_assembly_method = cte_dct["covv_assembly_method"]  # 'ViralFlow v.0.0.5'
 # cov_seq_technology
-covv_seq_technology = cte_dct['covv_seq_technology']  # 'Illumina Miseq'
+covv_seq_technology = cte_dct["covv_seq_technology"]  # 'Illumina Miseq'
 # fn (FASTA filename)
-fn = cte_dct['fn']  # 'myFastaFile.fa'
+fn = cte_dct["fn"]  # 'myFastaFile.fa'
 
 # Mount csv sequences
 
@@ -273,95 +295,87 @@ gisaid_df = pd.DataFrame([])
 
 # get constant values columns
 
-gisaid_df['submitter'] = add_cte_cols(to_submit_df, submitter)
+gisaid_df["submitter"] = add_cte_cols(to_submit_df, submitter)
 
-gisaid_df['covv_type'] = add_cte_cols(to_submit_df, covv_type)
+gisaid_df["covv_type"] = add_cte_cols(to_submit_df, covv_type)
 
-gisaid_df['covv_add_location'] = add_cte_cols(to_submit_df, covv_add_location)
+gisaid_df["covv_add_location"] = add_cte_cols(to_submit_df, covv_add_location)
 
-gisaid_df['covv_host'] = add_cte_cols(to_submit_df, covv_host)
+gisaid_df["covv_host"] = add_cte_cols(to_submit_df, covv_host)
 
-gisaid_df['covv_add_host_info'] = add_cte_cols(
-    to_submit_df, covv_add_host_info)
+gisaid_df["covv_add_host_info"] = add_cte_cols(to_submit_df, covv_add_host_info)
 
-gisaid_df['covv_passage'] = add_cte_cols(to_submit_df, covv_passage)
+gisaid_df["covv_passage"] = add_cte_cols(to_submit_df, covv_passage)
 
-gisaid_df['covv_sampling_strategy'] = add_cte_cols(
-    to_submit_df, covv_sampling_strategy)
+gisaid_df["covv_sampling_strategy"] = add_cte_cols(to_submit_df, covv_sampling_strategy)
 
-gisaid_df['covv_patient_status'] = add_cte_cols(
-    to_submit_df, covv_patient_status)
+gisaid_df["covv_patient_status"] = add_cte_cols(to_submit_df, covv_patient_status)
 
-gisaid_df['covv_specimen'] = add_cte_cols(to_submit_df, covv_specimen)
+gisaid_df["covv_specimen"] = add_cte_cols(to_submit_df, covv_specimen)
 
-gisaid_df['covv_outbreak'] = add_cte_cols(to_submit_df, covv_outbreak)
+gisaid_df["covv_outbreak"] = add_cte_cols(to_submit_df, covv_outbreak)
 
-gisaid_df['covv_last_vaccinated'] = add_cte_cols(
-    to_submit_df, covv_last_vaccinated)
+gisaid_df["covv_last_vaccinated"] = add_cte_cols(to_submit_df, covv_last_vaccinated)
 
-gisaid_df['covv_treatment'] = add_cte_cols(to_submit_df, covv_treatment)
+gisaid_df["covv_treatment"] = add_cte_cols(to_submit_df, covv_treatment)
 
-gisaid_df['covv_provider_sample_id'] = add_cte_cols(
-    to_submit_df, covv_provider_sample_id)
+gisaid_df["covv_provider_sample_id"] = add_cte_cols(
+    to_submit_df, covv_provider_sample_id
+)
 
-gisaid_df['covv_subm_lab'] = add_cte_cols(to_submit_df, covv_subm_lab)
+gisaid_df["covv_subm_lab"] = add_cte_cols(to_submit_df, covv_subm_lab)
 
-gisaid_df['covv_subm_lab_addr'] = add_cte_cols(
-    to_submit_df, covv_subm_lab_addr)
+gisaid_df["covv_subm_lab_addr"] = add_cte_cols(to_submit_df, covv_subm_lab_addr)
 
-gisaid_df['covv_subm_sample_id'] = add_cte_cols(
-    to_submit_df, covv_sbm_sample_id)
+gisaid_df["covv_subm_sample_id"] = add_cte_cols(to_submit_df, covv_sbm_sample_id)
 
-gisaid_df['covv_authors'] = add_cte_cols(to_submit_df, covv_authors)
+gisaid_df["covv_authors"] = add_cte_cols(to_submit_df, covv_authors)
 
-gisaid_df['covv_comment'] = add_cte_cols(to_submit_df, covv_comment)
+gisaid_df["covv_comment"] = add_cte_cols(to_submit_df, covv_comment)
 
-gisaid_df['covv_type'] = add_cte_cols(to_submit_df, covv_type)
+gisaid_df["covv_type"] = add_cte_cols(to_submit_df, covv_type)
 
-gisaid_df['covv_assembly_method'] = add_cte_cols(
-    to_submit_df, covv_assembly_method)
+gisaid_df["covv_assembly_method"] = add_cte_cols(to_submit_df, covv_assembly_method)
 
 # cov_seq_technology
-gisaid_df['covv_seq_technology'] = add_cte_cols(
-    to_submit_df, covv_seq_technology)
+gisaid_df["covv_seq_technology"] = add_cte_cols(to_submit_df, covv_seq_technology)
 
 # fn (FASTA filename)
-gisaid_df['fn'] = add_cte_cols(to_submit_df, fn)
+gisaid_df["fn"] = add_cte_cols(to_submit_df, fn)
 
-print('@ loading sample specific columns...')
+print("@ loading sample specific columns...")
 # get sample specific columns
-new_cols = ['covv_collection_date', 'covv_gender',
-            'covv_patient_age', 'covv_coverage']
+new_cols = ["covv_collection_date", "covv_gender", "covv_patient_age", "covv_coverage"]
 gisaid_df[new_cols] = to_submit_df.apply(get_gisaid_cols, axis=1)
 
 # covv_orig_lab cols
 # covv_orig_lab
 # return covv_orig_lab, covv_orig_lab_addr and covv_authors
-gisaid_df['covv_orig_lab'] = to_submit_df.apply(get_ori_lab, axis=1)
-gisaid_df['covv_orig_lab_addr'] = gisaid_df.apply(get_ori_lab_add, axis=1)
-gisaid_df['covv_authors'] = gisaid_df.apply(get_ori_lab_authors, axis=1)
+gisaid_df["covv_orig_lab"] = to_submit_df.apply(get_ori_lab, axis=1)
+gisaid_df["covv_orig_lab_addr"] = gisaid_df.apply(get_ori_lab_add, axis=1)
+gisaid_df["covv_authors"] = gisaid_df.apply(get_ori_lab_authors, axis=1)
 
-gisaid_df['covv_virus_name'] = to_submit_df.apply(get_viral_name, axis=1)
-gisaid_df['covv_location'] = to_submit_df.apply(get_location_col, axis=1)
+gisaid_df["covv_virus_name"] = to_submit_df.apply(get_viral_name, axis=1)
+gisaid_df["covv_location"] = to_submit_df.apply(get_location_col, axis=1)
 
 now = datetime.now()
 dt_string = now.strftime("%d-%m-%Y")
-outName = dt_string+'_IAMsequences.csv'
-print('@ writing output ('+outName+')')
-gisaid_df.to_csv(output_dir+'/'+outName)
+outName = dt_string + "_IAMsequences.csv"
+print("@ writing output (" + outName + ")")
+gisaid_df.to_csv(output_dir + "/" + outName)
 
-print('| --- Writing Multifasta --- |')
-print('@ generating multifasta file...')
+print("| --- Writing Multifasta --- |")
+print("@ generating multifasta file...")
 
-#fn = 'test.fasta'
+# fn = 'test.fasta'
 # /storage/monitoracovid19/RESULTS/'
-#data_dir = '/storage/rgf_data/gisaid_box/RESULTS_copy/'
+# data_dir = '/storage/rgf_data/gisaid_box/RESULTS_copy/'
 
-new_fanm = output_dir+dt_string+'_IAMsequences.fa'
-#to_submit_df = pd.read_csv('/storage/rgf_data/gisaid_box/to_submit.csv')
-#data_dir = '/storage/monitoracovid19/RESULTS/'
-#new_fanm = '/storage/rgf_data/gisaid_box/'+fn
-#to_submit_df = pd.read_csv('/storage/rgf_data/gisaid_box/to_submit.csv')
+new_fanm = output_dir + "/" + dt_string + "_IAMsequences.fa"
+# to_submit_df = pd.read_csv('/storage/rgf_data/gisaid_box/to_submit.csv')
+# data_dir = '/storage/monitoracovid19/RESULTS/'
+# new_fanm = '/storage/rgf_data/gisaid_box/'+fn
+# to_submit_df = pd.read_csv('/storage/rgf_data/gisaid_box/to_submit.csv')
 
 get_multifasta_fl(new_fanm, to_submit_df, data_dir)
-print(':: DONE ::')
+print(":: DONE ::")
