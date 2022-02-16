@@ -93,6 +93,8 @@ to_feed = pd.read_csv(args.major_summary_csv)
 # get contamination
 control_labels = args.negControlLabels
 outdir = args.outDir
+if outdir.endswith("/") is False:
+    outdir += "/"
 outname = args.outName
 # -----------------------------------------------------------------------------
 print("@ preparing sorted csv...")
@@ -106,7 +108,7 @@ final_df = final_df.sort_values(by="iam_number")
 final_df["coverage"] = final_df.apply(roundIt, axis=1)
 print("@ writing output file")
 # final_df = final_df.loc[~bad_df]
-final_df.to_csv("./feed_tabelao/short_sorted.csv")
+final_df.to_csv(outdir + outname)
 print("@ checking for non sequentials to be aware of...")
 # check for nonsequential IAM
 printSequentials(final_df["iam_number"].values)
