@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import pandas as pd
 import argparse
 from datetime import datetime
@@ -63,7 +64,10 @@ def get_viral_name(row):
 
 
 def floatfy_avg_depth(row):
-    return float(row["avg depth"].replace(",", "."))
+    try:
+        return float(row["avg depth"].replace(",", "."))
+    except (AttributeError):
+        return float(row["avg depth"])
 
 
 def parse_onhold(row):
