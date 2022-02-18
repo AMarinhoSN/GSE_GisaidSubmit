@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+
+import pandas as pd
+import os
+import argparse
+
+# --- FUNCTIONS ---------------------------------------------------------------
+# get metadata from fasta and mount IAMcod-gisaid
+def get_gis2iamdf(fa_path):
+    fa = open(fa_path, "r")
+    # c = 0
+    dct_lst = []
+    for line in fa:
+        if line.startswith(">"):
+            # get individual fields
+            l_data = line.split("|")
+            # gisaid code
+            gis_cod = l_data[1]
+            # gisaid seq name
+            seq_nm = l_data[0]
+            # get iam code
+            cod_iam = l_data[0].split("/")[2].split("-")[2]
+            dct_lst.append(
+                {
+                    "cod_iam": cod_iam,
+                    "codigo_gisaid": gis_cod,
+                    "nome_genoma_gisaid": seq_nm,
+                }
+            )
+
+    return pd.DataFrame(dct_lst)
+
+
+def get_IAMnum(row):
+    if row["cod_iam"].startswith("IAM"):
+        return int(row["cod_iam"].split("_")[0][3 : len(row["cod_iam"])])
+    else:
+        return 0
+
+
+# -----------------------------------------------------------------------------
+# -- INPUT --------------------------------------------------------------------
+# load origin lab datagrame
+dsc = """
+Get a sub files which must be submitted to GISAID.
+"""
+
+parser = argparse.ArgumentParser(description=dsc)
+parser.add_argument(
+    "gis_fasta_file",
+    type=str,
+    required=True,
+    help="path of fasta file obtained from GISAID",
+)
+
+parser.add_argument(
+    "-output_dir",
+    default=os.getcwd(),
+    help="directory for output (default = working dir)",
+)
+args = parser.parse_args()
+
+# -----------------------------------------------------------------------------
+print(" Fiocruz Genomic Surveillance Engine :: GISAID submition module")
+print(" v.0.0.1 : Prototype")
+print("                     APP: getUp2GisaidFiles.py")
+print(" ---------------------------------------------------------------------")
+fa_path = args.gis_fasta_file
+out_dir = args.output_dir
+if out_dir.endswith("/") is False:
+    out_dir += "/"
+# -----------------------------------------------------------------------------
+# --- RUN ---------------------------------------------------------------------
+# fa_path = "./gisaid/from_gisaid/gisaid_hcov-19_2022_02_08_16.fasta"
+print("@ loading fasta headers...")
+gis2iam_df = get_gis2iamdf(fa_path)
+print("@ buiding gis id to iam relationship...")
+gis2iam_df.loc[:, "iam_number"] = gis2iam_df.apply(get_IAMnum, axis=1)
+print("@ generating gis2iam.csv")
+gis2iam_df = gis2iam_df.sort_values(by="iam_number")
+gis2iam_df.to_csv(out_dir + "gis2iam.csv")
