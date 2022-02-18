@@ -74,7 +74,7 @@ def get_location_col(row):
     cte_loc = "South America/Brazil/"
     # location
     state = row["estado"]
-    city = row["municipio"]
+    city = row["Município"]
     return cte_loc + state + "/" + city
 
 
