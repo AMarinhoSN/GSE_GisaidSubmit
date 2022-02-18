@@ -19,6 +19,7 @@ setup(
         "scripts/IAM_feedTabelao",
         "scripts/IAM_getToSubmitDF_gis",
         "scripts/IAM_getUp2GisaidFiles",
+        "scripts/IAM_getGIS2IAM"
     ],
     install_requires=["pandas"],
     zip_safe=False,
