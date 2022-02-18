@@ -3,53 +3,6 @@ import pandas as pd
 from datetime import datetime
 import argparse
 
-# load origin lab datagrame
-dsc = """
-Get a sub files which must be submitted to GISAID.
-"""
-
-parser = argparse.ArgumentParser(description=dsc)
-parser.add_argument(
-    "-orig_lab_csv",
-    type=str,
-    required=True,
-    help="path of csv containing origin lab information",
-)
-parser.add_argument(
-    "-to_submit_csv",
-    type=str,
-    required=True,
-    help="path for to_submit.csv (slice of THE TABELAO)) \
-                         containing ready to submit sequence codes",
-)
-parser.add_argument(
-    "-cte_values",
-    type=str,
-    required=True,
-    help="path for val containing constante values",
-)
-h1 = "directory containing consensus sequence fasta file of samples"
-parser.add_argument("-data_dir", type=str, required=True, help=h1)
-parser.add_argument(
-    "-output_dir",
-    default=os.getcwd(),
-    help="directory for output (default = working dir)",
-)
-
-args = parser.parse_args()
-
-# -----------------------------------------------------------------------------
-print(" Fiocruz Genomic Surveillance Engine :: GISAID submition module")
-print(" v.0.0.1 : Prototype")
-print("                     APP: getUp2GisaidFiles.py")
-print(" ---------------------------------------------------------------------")
-
-orig_lab_df = pd.read_csv(args.orig_lab_csv)  # './example/orig_labs.csv')
-to_submit_df = pd.read_csv(args.to_submit_csv)
-#'/HDD/Projects/tables_IAM/14-10-2021_to_submit.csv')
-cte_vals_path = args.cte_values  # './example/constantValues.val'
-data_dir = args.data_dir
-output_dir = args.output_dir
 # --- FUNCTIONS ---------------------------------------------------------------
 
 
@@ -255,7 +208,57 @@ def get_multifasta_fl(new_fanm, to_submit_df, data_dir):
                 print(i)
 
 
+# ------------------------------------------------------------------------------
+# -- INPUT --------------------------------------------------------------------
+# load origin lab datagrame
+dsc = """
+Get a sub files which must be submitted to GISAID.
+"""
+
+parser = argparse.ArgumentParser(description=dsc)
+parser.add_argument(
+    "-orig_lab_csv",
+    type=str,
+    required=True,
+    help="path of csv containing origin lab information",
+)
+parser.add_argument(
+    "-to_submit_csv",
+    type=str,
+    required=True,
+    help="path for to_submit.csv (slice of THE TABELAO)) \
+                         containing ready to submit sequence codes",
+)
+parser.add_argument(
+    "-cte_values",
+    type=str,
+    required=True,
+    help="path for val containing constante values",
+)
+h1 = "directory containing consensus sequence fasta file of samples"
+parser.add_argument("-data_dir", type=str, required=True, help=h1)
+parser.add_argument(
+    "-output_dir",
+    default=os.getcwd(),
+    help="directory for output (default = working dir)",
+)
+
+args = parser.parse_args()
+
 # -----------------------------------------------------------------------------
+print(" Fiocruz Genomic Surveillance Engine :: GISAID submition module")
+print(" v.0.0.1 : Prototype")
+print("                     APP: getUp2GisaidFiles.py")
+print(" ---------------------------------------------------------------------")
+
+orig_lab_df = pd.read_csv(args.orig_lab_csv)
+to_submit_df = pd.read_csv(args.to_submit_csv)
+cte_vals_path = args.cte_values
+data_dir = args.data_dir
+output_dir = args.output_dir
+
+# -----------------------------------------------------------------------------
+# -- RUN ----------------------------------------------------------------------
 print("| --- csv sample metadata --- |")
 print("@ generating constant values columns...")
 cte_dct = load_cte_values(cte_vals_path)
@@ -366,16 +369,7 @@ gisaid_df.to_csv(output_dir + "/" + outName)
 
 print("| --- Writing Multifasta --- |")
 print("@ generating multifasta file...")
-
-# fn = 'test.fasta'
-# /storage/monitoracovid19/RESULTS/'
-# data_dir = '/storage/rgf_data/gisaid_box/RESULTS_copy/'
-
 new_fanm = output_dir + "/" + dt_string + "_IAMsequences.fa"
-# to_submit_df = pd.read_csv('/storage/rgf_data/gisaid_box/to_submit.csv')
-# data_dir = '/storage/monitoracovid19/RESULTS/'
-# new_fanm = '/storage/rgf_data/gisaid_box/'+fn
-# to_submit_df = pd.read_csv('/storage/rgf_data/gisaid_box/to_submit.csv')
-
 get_multifasta_fl(new_fanm, to_submit_df, data_dir)
+
 print(":: DONE ::")
